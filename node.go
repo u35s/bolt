@@ -195,7 +195,7 @@ func (n *node) read(p *page) {
 		_assert(len(inode.key) > 0, "read: zero-length inode key")
 	}
 
-	// 为了在我们spill时能够在父节点找到node而保存第一个键
+	// 为了在溢出时时能够在父节点找到节点而保存第一个键
 	// Save first key so we can find the node in the parent when we spill.
 	if len(n.inodes) > 0 {
 		n.key = n.inodes[0].key
