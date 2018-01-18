@@ -1,96 +1,82 @@
 Bolt [![Coverage Status](https://coveralls.io/repos/boltdb/bolt/badge.svg?branch=master)](https://coveralls.io/r/boltdb/bolt?branch=master) [![GoDoc](https://godoc.org/github.com/boltdb/bolt?status.svg)](https://godoc.org/github.com/boltdb/bolt) ![Version](https://img.shields.io/badge/version-1.2.1-green.svg)
 ====
 
-Bolt is a pure Go key/value store inspired by [Howard Chu's][hyc_symas]
-[LMDB project][lmdb]. The goal of the project is to provide a simple,
-fast, and reliable database for projects that don't require a full database
-server such as Postgres or MySQL.
+Bolt是根据 [Howard Chu's][hyc_symas][LMDB 项目][lmdb] 开发的一个存粹的go语言版的key/value存储.
+它的目标是为项目提供一个简单、高效、可靠的嵌入式数据库而不是要求一个完成的数据库服务器，例如Postgres和MySQL.
 
-Since Bolt is meant to be used as such a low-level piece of functionality,
-simplicity is key. The API will be small and only focus on getting values
-and setting values. That's it.
+如此低级别的功能模块,简单是关键,所以bollt的API很小并且仅仅关注geting和seting
 
 [hyc_symas]: https://twitter.com/hyc_symas
 [lmdb]: http://symas.com/mdb/
 
-## Project Status
+## 项目状态
 
-Bolt is stable, the API is fixed, and the file format is fixed. Full unit
-test coverage and randomized black box testing are used to ensure database
-consistency and thread safety. Bolt is currently used in high-load production
-environments serving databases as large as 1TB. Many companies such as
-Shopify and Heroku use Bolt-backed services every day.
+Bolt是稳定的, API和文件格式也是固定的. 单元测试完全覆盖和随机黑盒测试确保数据一致性和线程安全。
+Bolt当前被用在T级别高负载的产品环境中，Shopify和Heroku也每天使用Bolt服务
 
-## A message from the author
+## 开发者对项目的说明
 
-> The original goal of Bolt was to provide a simple pure Go key/value store and to
-> not bloat the code with extraneous features. To that end, the project has been
-> a success. However, this limited scope also means that the project is complete.
+> Bolt最初目标是提供一个简单纯粹的go语言key/value存储而不需要额外的特性,
+> 最后项目成功了,不需要额外的特性也就意味着项目已经完成了
 > 
-> Maintaining an open source database requires an immense amount of time and energy.
-> Changes to the code can have unintended and sometimes catastrophic effects so
-> even simple changes require hours and hours of careful testing and validation.
+> 维护一个开源数据库需要大量的时间和精力,对代码的更改可能会产生意想不到的、有时是灾难性的影响，
+> 因此即使是简单的更改也需要数小时的仔细测试和验证。
 >
-> Unfortunately I no longer have the time or energy to continue this work. Bolt is
-> in a stable state and has years of successful production use. As such, I feel that
-> leaving it in its current state is the most prudent course of action.
+> 不幸的是，我没有时间和精力继续这项工作。bolt处于一个稳定的状态，有多年成功的生产使用。
+> 因此，我认为，把它留在目前的状态是最审慎的行动方针。
 >
-> If you are interested in using a more featureful version of Bolt, I suggest that
-> you look at the CoreOS fork called [bbolt](https://github.com/coreos/bbolt).
+> 如果你有兴趣使用更多特性的bolt版本,我建议你看一下CoreOS的[bbolt](https://github.com/coreos/bbolt).
 
 - Ben Johnson ([@benbjohnson](https://twitter.com/benbjohnson))
 
-## Table of Contents
+## 目录
 
-- [Getting Started](#getting-started)
-  - [Installing](#installing)
-  - [Opening a database](#opening-a-database)
-  - [Transactions](#transactions)
-    - [Read-write transactions](#read-write-transactions)
-    - [Read-only transactions](#read-only-transactions)
-    - [Batch read-write transactions](#batch-read-write-transactions)
-    - [Managing transactions manually](#managing-transactions-manually)
-  - [Using buckets](#using-buckets)
-  - [Using key/value pairs](#using-keyvalue-pairs)
-  - [Autoincrementing integer for the bucket](#autoincrementing-integer-for-the-bucket)
-  - [Iterating over keys](#iterating-over-keys)
-    - [Prefix scans](#prefix-scans)
-    - [Range scans](#range-scans)
+- [开始](#getting-started)
+  - [安装](#installing)
+  - [打开一个数据库](#opening-a-database)
+  - [事务](#transactions)
+    - [读写事务](#read-write-transactions)
+    - [只读事务](#read-only-transactions)
+    - [批处理读写事务](#batch-read-write-transactions)
+    - [手动管理事务](#managing-transactions-manually)
+  - [使用buckets](#using-buckets)
+  - [使用键值对](#using-keyvalue-pairs)
+  - [bucket自增](#autoincrementing-integer-for-the-bucket)
+  - [遍历键](#iterating-over-keys)
+    - [前缀扫描](#prefix-scans)
+    - [区间扫描](#range-scans)
     - [ForEach()](#foreach)
-  - [Nested buckets](#nested-buckets)
-  - [Database backups](#database-backups)
-  - [Statistics](#statistics)
-  - [Read-Only Mode](#read-only-mode)
-  - [Mobile Use (iOS/Android)](#mobile-use-iosandroid)
-- [Resources](#resources)
-- [Comparison with other databases](#comparison-with-other-databases)
-  - [Postgres, MySQL, & other relational databases](#postgres-mysql--other-relational-databases)
+  - [bucket嵌套](#nested-buckets)
+  - [数据备份](#database-backups)
+  - [统计](#statistics)
+  - [只读模式](#read-only-mode)
+  - [手机上使用(iOS/Android)](#mobile-use-iosandroid)
+- [相关资源](#resources)
+- [和其他数据库比较](#comparison-with-other-databases)
+  - [Postgres, MySQL及其他的关系数据库](#postgres-mysql--other-relational-databases)
   - [LevelDB, RocksDB](#leveldb-rocksdb)
   - [LMDB](#lmdb)
-- [Caveats & Limitations](#caveats--limitations)
-- [Reading the Source](#reading-the-source)
-- [Other Projects Using Bolt](#other-projects-using-bolt)
+- [注意和限制](#caveats--limitations)
+- [源码阅读](#reading-the-source)
+- [使用Bolt的项目](#other-projects-using-bolt)
 
-## Getting Started
+## 开始
 
-### Installing
+### 安装
 
-To start using Bolt, install Go and run `go get`:
+首先安装go,然后运行go get:
 
 ```sh
 $ go get github.com/boltdb/bolt/...
 ```
-
-This will retrieve the library and install the `bolt` command line utility into
-your `$GOBIN` path.
+这将检索库并且在$GOBIN路径下安装bolt命令行工具
 
 
-### Opening a database
+### 打开一个数据库
 
-The top-level object in Bolt is a `DB`. It is represented as a single file on
-your disk and represents a consistent snapshot of your data.
+bolt中最高级对象是DB,它相当于磁盘上的单个文件，并且提供数据快照的一致性
 
-To open your database, simply use the `bolt.Open()` function:
+要打开数据库,只需使用bolt.Open()函数:
 
 ```go
 package main
@@ -113,37 +99,32 @@ func main() {
 	...
 }
 ```
-
-Please note that Bolt obtains a file lock on the data file so multiple processes
-cannot open the same database at the same time. Opening an already open Bolt
-database will cause it to hang until the other process closes it. To prevent
-an indefinite wait you can pass a timeout option to the `Open()` function:
+请注意，bolt在数据文件上获得了一个文件锁，因此多个进程不能同时打开同一个数据库。
+打开一个已经打开的bolt数据库将使其挂起直到另一个进程关闭它。为了防止无限期等待，
+您可以将超时选项传递给Open()函数:
 
 ```go
 db, err := bolt.Open("my.db", 0600, &bolt.Options{Timeout: 1 * time.Second})
 ```
 
 
-### Transactions
+### 事务
 
-Bolt allows only one read-write transaction at a time but allows as many
-read-only transactions as you want at a time. Each transaction has a consistent
-view of the data as it existed when the transaction started.
+Bolt一次只允许一个读写事务，但同时允许尽可能多的只读事务。
+每个事务在事务启动时都有一个一致的数据视图。
 
-Individual transactions and all objects created from them (e.g. buckets, keys)
-are not thread safe. To work with data in multiple goroutines you must start
-a transaction for each one or use locking to ensure only one goroutine accesses
-a transaction at a time. Creating transaction from the `DB` is thread safe.
+单个事务和从它们创建的所有对象(例如bucket、键)都不是线程安全的。
+要处理多个goroutines的数据，您必须为每个goroutines启动一个事务，
+或者使用锁来确保每次只能有一个goroutine访问事务。从DB创建事务是线程安全的。
 
-Read-only transactions and read-write transactions should not depend on one
-another and generally shouldn't be opened simultaneously in the same goroutine.
-This can cause a deadlock as the read-write transaction needs to periodically
-re-map the data file but it cannot do so while a read-only transaction is open.
+只读事务和读写事务不应该相互依赖，通常不应该同时在同一个goroutine中打开。
+这可能导致一个死锁，因为读写事务需要周期性地重新映射数据文件，但它不能这样做，
+而只读事务是打开的。
 
 
-#### Read-write transactions
+#### 读写事务
 
-To start a read-write transaction, you can use the `DB.Update()` function:
+要开始读写事务，可以使用DB.Update()函数:
 
 ```go
 err := db.Update(func(tx *bolt.Tx) error {
@@ -152,20 +133,16 @@ err := db.Update(func(tx *bolt.Tx) error {
 })
 ```
 
-Inside the closure, you have a consistent view of the database. You commit the
-transaction by returning `nil` at the end. You can also rollback the transaction
-at any point by returning an error. All database operations are allowed inside
-a read-write transaction.
+在闭包内，您对数据库有一个一致的视图。您将在结束时返回nil来提交事务。
+您还可以通过返回一个错误来回滚该事务。所有数据库操作都允许在读写事务中。
 
-Always check the return error as it will report any disk failures that can cause
-your transaction to not complete. If you return an error within your closure
-it will be passed through.
+总是检查返回错误，因为它将报告任何可能导致您的事务不完整的磁盘故障。
+如果在闭包中返回一个错误，它将被传递。
 
 
-#### Read-only transactions
+#### 只读事务
 
-To start a read-only transaction, you can use the `DB.View()` function:
-
+要开始读事务，可以使用DB.View()函数:
 ```go
 err := db.View(func(tx *bolt.Tx) error {
 	...
@@ -173,17 +150,13 @@ err := db.View(func(tx *bolt.Tx) error {
 })
 ```
 
-You also get a consistent view of the database within this closure, however,
-no mutating operations are allowed within a read-only transaction. You can only
-retrieve buckets, retrieve values, and copy the database within a read-only
-transaction.
+您还可以在这个闭包中得到数据库的一致视图，但是，在只读事务中不允许进行任何突变操作。
+您只能检索bucket、检索值，并在只读事务中复制数据库。
 
 
-#### Batch read-write transactions
+#### 批处理读写事务
 
-Each `DB.Update()` waits for disk to commit the writes. This overhead
-can be minimized by combining multiple updates with the `DB.Batch()`
-function:
+每个DB.Update()等待磁盘提交写入。通过将多个更新与DB.Batch()函数组合在一起，可以最小化这个开销:
 
 ```go
 err := db.Batch(func(tx *bolt.Tx) error {
@@ -192,17 +165,12 @@ err := db.Batch(func(tx *bolt.Tx) error {
 })
 ```
 
-Concurrent Batch calls are opportunistically combined into larger
-transactions. Batch is only useful when there are multiple goroutines
-calling it.
+并发批处理调用是随机组合成更大的事务的。当有多个goroutines调用时，批处理才有用。
 
-The trade-off is that `Batch` can call the given
-function multiple times, if parts of the transaction fail. The
-function must be idempotent and side effects must take effect only
-after a successful return from `DB.Batch()`.
+如果事务部分失败，则该批处理可以多次调用给定的函数。
+该函数必须具有幂等性，并且只有在从DB.Batch()成功返回后，副作用才会生效。
 
-For example: don't display messages from inside the function, instead
-set variables in the enclosing scope:
+例如:不要在函数内显示消息，而是在封闭范围内设置变量:
 
 ```go
 var id uint64
@@ -220,16 +188,12 @@ fmt.Println("Allocated ID %d", id)
 ```
 
 
-#### Managing transactions manually
+#### 手动管理事务
 
-The `DB.View()` and `DB.Update()` functions are wrappers around the `DB.Begin()`
-function. These helper functions will start the transaction, execute a function,
-and then safely close your transaction if an error is returned. This is the
-recommended way to use Bolt transactions.
+The DB.View()和DB.Update()是对DB.Begin()的封装,这些函数将启动事务，
+执行一个函数，然后在返回错误时安全地关闭您的事务。这是使用bolt事务的推荐方法。
 
-However, sometimes you may want to manually start and end your transactions.
-You can use the `DB.Begin()` function directly but **please** be sure to close
-the transaction.
+然而，有时您可能需要手动启动和结束事务。您可以直接使用DB.Begin()函数，但请确保关闭该事务。
 
 ```go
 // Start a writable transaction.
@@ -251,15 +215,11 @@ if err := tx.Commit(); err != nil {
 }
 ```
 
-The first argument to `DB.Begin()` is a boolean stating if the transaction
-should be writable.
+DB.Begin()的第一个参数是布尔值来标识是否是写事务
 
+### 使用 buckets
 
-### Using buckets
-
-Buckets are collections of key/value pairs within the database. All keys in a
-bucket must be unique. You can create a bucket using the `DB.CreateBucket()`
-function:
+bucket是数据库中键/值对的集合。bucket中的所有键必须是惟一的。您可以使用DB.CreateBucket()函数创建一个bucket:
 
 ```go
 db.Update(func(tx *bolt.Tx) error {
@@ -271,17 +231,15 @@ db.Update(func(tx *bolt.Tx) error {
 })
 ```
 
-You can also create a bucket only if it doesn't exist by using the
-`Tx.CreateBucketIfNotExists()` function. It's a common pattern to call this
-function for all your top-level buckets after you open your database so you can
-guarantee that they exist for future transactions.
+你还可以使用Tx.CreateBucketIfNotExists()函数在bucket不存在使才创建bucket,
+在打开数据库之后，为所有顶级桶调用此函数是一种常见的模式，这样您就可以保证它们存在于将来的事务中。
 
-To delete a bucket, simply call the `Tx.DeleteBucket()` function.
+要删除一个bucket，只需调用Tx.DeleteBucket()函数。
 
 
-### Using key/value pairs
+### 使用键值对
 
-To save a key/value pair to a bucket, use the `Bucket.Put()` function:
+要在bucket存一个键值对,使用Bucket.Put()函数
 
 ```go
 db.Update(func(tx *bolt.Tx) error {
@@ -291,8 +249,7 @@ db.Update(func(tx *bolt.Tx) error {
 })
 ```
 
-This will set the value of the `"answer"` key to `"42"` in the `MyBucket`
-bucket. To retrieve this value, we can use the `Bucket.Get()` function:
+这将在MyBucket中把answer的值设为42,获取这个值时使用Bucket.Get()函数
 
 ```go
 db.View(func(tx *bolt.Tx) error {
@@ -303,23 +260,18 @@ db.View(func(tx *bolt.Tx) error {
 })
 ```
 
-The `Get()` function does not return an error because its operation is
-guaranteed to work (unless there is some kind of system failure). If the key
-exists then it will return its byte slice value. If it doesn't exist then it
-will return `nil`. It's important to note that you can have a zero-length value
-set to a key which is different than the key not existing.
+Get()函数不会返回一个错误，因为它的操作可以保证(除非出现某种系统故障)。
+如果键存在，它将返回它的字节切片值。如果它不存在，它将返回nil。
+需要注意的是，您可以将一个零长度的值设置为一个与不存在的键不同的键。
 
-Use the `Bucket.Delete()` function to delete a key from the bucket.
+使用Bucket.Delete()函数从桶中删除一个键。
 
-Please note that values returned from `Get()` are only valid while the
-transaction is open. If you need to use a value outside of the transaction
-then you must use `copy()` to copy it to another byte slice.
+请注意从Get()返回的值只有在事务打开时才有效。如果您需要在事务之外使用一个值，那么您必须使用copy()将其复制到另一个字节片。
 
 
-### Autoincrementing integer for the bucket
-By using the `NextSequence()` function, you can let Bolt determine a sequence
-which can be used as the unique identifier for your key/value pairs. See the
-example below.
+### bucket自增
+
+通过使用NextSequence()函数，可以让Bolt确定一个序列，该序列可以作为键/值对的唯一标识符。看下面的例子。
 
 ```go
 // CreateUser saves u to the store. The new user ID is set on u once the data is persisted.
@@ -359,11 +311,9 @@ type User struct {
 }
 ```
 
-### Iterating over keys
+### 遍历键
 
-Bolt stores its keys in byte-sorted order within a bucket. This makes sequential
-iteration over these keys extremely fast. To iterate over keys we'll use a
-`Cursor`:
+Bolt的key在bucket中顺序排列。这使得在这些键上的连续迭代非常快。要遍历键，我们将使用Cursor:
 
 ```go
 db.View(func(tx *bolt.Tx) error {
@@ -379,11 +329,9 @@ db.View(func(tx *bolt.Tx) error {
 	return nil
 })
 ```
+Curser允许您移动到key列表中的特定点，并一次向前或向后移动一个键
 
-The cursor allows you to move to a specific point in the list of keys and move
-forward or backward through the keys one at a time.
-
-The following functions are available on the cursor:
+Curser有以下函数可用
 
 ```
 First()  Move to the first key.
@@ -393,20 +341,16 @@ Next()   Move to the next key.
 Prev()   Move to the previous key.
 ```
 
-Each of those functions has a return signature of `(key []byte, value []byte)`.
-When you have iterated to the end of the cursor then `Next()` will return a
-`nil` key.  You must seek to a position using `First()`, `Last()`, or `Seek()`
-before calling `Next()` or `Prev()`. If you do not seek to a position then
-these functions will return a `nil` key.
-
-During iteration, if the key is non-`nil` but the value is `nil`, that means
-the key refers to a bucket rather than a value.  Use `Bucket.Bucket()` to
-access the sub-bucket.
+每个函数都有一个返回值(key[]byte，value[]byte)。当您迭代到游标的末尾时，
+Next()返回的key为nil 。在调用Next()或Prev()之前，
+必须使用First()、Last()或Seek()来查找位置。如果您不找到一个位置，
+那么这些函数将返回nil键。在迭代过程中，如果key是非nil，但value为nil，
+这意味着键引用的是一个bucket而不是一个value。使用Bucket.Bucket()来访问子桶。
 
 
-#### Prefix scans
+#### 前缀扫描
 
-To iterate over a key prefix, you can combine `Seek()` and `bytes.HasPrefix()`:
+要遍历一个键前缀，可以组合Seek()和bytes.HasPrefix():
 
 ```go
 db.View(func(tx *bolt.Tx) error {
@@ -422,11 +366,10 @@ db.View(func(tx *bolt.Tx) error {
 })
 ```
 
-#### Range scans
+#### 区间扫描
 
-Another common use case is scanning over a range such as a time range. If you
-use a sortable time encoding such as RFC3339 then you can query a specific
-date range like this:
+另一个常见的用例是扫描一个范围，例如一个时间范围。如果您使用sortable时间编码，
+比如RFC3339，那么您可以查询一个特定的日期范围，如下所示:
 
 ```go
 db.View(func(tx *bolt.Tx) error {
@@ -446,13 +389,11 @@ db.View(func(tx *bolt.Tx) error {
 })
 ```
 
-Note that, while RFC3339 is sortable, the Golang implementation of RFC3339Nano does not use a fixed number of digits after the decimal point and is therefore not sortable.
-
+请注意，虽然RFC3339是可排序的，但是RFC3339Nano的Golang实现在小数点后并没有使用固定的位数，因此不会被排序。
 
 #### ForEach()
 
-You can also use the function `ForEach()` if you know you'll be iterating over
-all the keys in a bucket:
+如果要遍历所有键,还可以使用ForEach()
 
 ```go
 db.View(func(tx *bolt.Tx) error {
@@ -467,15 +408,11 @@ db.View(func(tx *bolt.Tx) error {
 })
 ```
 
-Please note that keys and values in `ForEach()` are only valid while
-the transaction is open. If you need to use a key or value outside of
-the transaction, you must use `copy()` to copy it to another byte
-slice.
+请注意，ForEach()中的键和值只在事务打开时有效。如果需要在事务之外使用键或值，则必须使用copy()将其复制到另一个字节片。
 
-### Nested buckets
+### bucket嵌套
 
-You can also store a bucket in a key to create nested buckets. The API is the
-same as the bucket management API on the `DB` object:
+您还可以将一个bucket存储在一个键中，以创建嵌套的bucket。API与DB对象上的桶管理API相同:
 
 ```go
 func (*Bucket) CreateBucket(key []byte) (*Bucket, error)
@@ -483,7 +420,8 @@ func (*Bucket) CreateBucketIfNotExists(key []byte) (*Bucket, error)
 func (*Bucket) DeleteBucket(key []byte) error
 ```
 
-Say you had a multi-tenant application where the root level bucket was the account bucket. Inside of this bucket was a sequence of accounts which themselves are buckets. And inside the sequence bucket you could have many buckets pertaining to the Account itself (Users, Notes, etc) isolating the information into logical groupings.
+如果你是一个多用户应用程序，其中根级别的bucket存储许多本身就是bucket的账号。
+在账户bucket中，您可以有许多与账号本身(用户、Notes等)相关的bucket，将信息隔离到逻辑分组中。
 
 ```go
 
@@ -533,19 +471,14 @@ func createUser(accountID int, u *User) error {
 
 
 
-### Database backups
+### 数据备份
 
-Bolt is a single file so it's easy to backup. You can use the `Tx.WriteTo()`
-function to write a consistent view of the database to a writer. If you call
-this from a read-only transaction, it will perform a hot backup and not block
-your other database reads and writes.
+Bolt是一个单独的文件，所以很容易备份。可以使用Tx.WriteTo()函数将数据库的一致视图写入Writer。
+如果您从一个只读事务中调用这个，它将执行一个热备份，而不会阻塞您的其他数据库读写。
 
-By default, it will use a regular file handle which will utilize the operating
-system's page cache. See the [`Tx`](https://godoc.org/github.com/boltdb/bolt#Tx)
-documentation for information about optimizing for larger-than-RAM datasets.
+默认情况下，它将使用一个常规的文件句柄来使用操作系统的页面缓存。请参阅Tx文档，了解关于优化大于ram数据集的信息。
 
-One common use case is to backup over HTTP so you can use tools like `cURL` to
-do database backups:
+一个常见的用例是通过HTTP进行备份，这样您就可以使用curl这样的工具进行数据库备份:
 
 ```go
 func BackupHandleFunc(w http.ResponseWriter, req *http.Request) {
@@ -562,27 +495,22 @@ func BackupHandleFunc(w http.ResponseWriter, req *http.Request) {
 }
 ```
 
-Then you can backup using this command:
+然后你就可以使用下面的方法备份了
 
 ```sh
 $ curl http://localhost/backup > my.db
 ```
+或者打开你的浏览器输入http://localhost/backup来自动下载
 
-Or you can open your browser to `http://localhost/backup` and it will download
-automatically.
-
-If you want to backup to another file you can use the `Tx.CopyFile()` helper
-function.
+如果你想备份到其他文件中去可以使用Tx.CopyFile()函数
 
 
-### Statistics
+### 统计
 
-The database keeps a running count of many of the internal operations it
-performs so you can better understand what's going on. By grabbing a snapshot
-of these stats at two points in time we can see what operations were performed
-in that time range.
+数据库保存了它执行的许多内部操作的运行计数，这样您就可以更好地理解发生了什么。
+通过在两个时间点抓取这些数据的快照，我们可以看到在那个时间范围内执行了什么操作。
 
-For example, we could start a goroutine to log stats every 10 seconds:
+例如，我们可以启动一个goroutine每隔10秒记录日志:
 
 ```go
 go func() {
@@ -606,16 +534,13 @@ go func() {
 }()
 ```
 
-It's also useful to pipe these stats to a service such as statsd for monitoring
-or to provide an HTTP endpoint that will perform a fixed-length sample.
+还可以将这些统计信息传输到像statsd这样的服务中，以监视或提供一个将执行固定长度示例的HTTP端点。
 
 
-### Read-Only Mode
+### 只读模式
 
-Sometimes it is useful to create a shared, read-only Bolt database. To this,
-set the `Options.ReadOnly` flag when opening your database. Read-only mode
-uses a shared lock to allow multiple processes to read from the database but
-it will block any processes from opening the database in read-write mode.
+有时创建一个共享的只读的bolt数据库是很有用的。仅仅在打开数据库时设置Option.ReadOnly就行。
+只读模式使用共享锁来允许多个进程从数据库中读取，但是它将阻止任何进程以读写模式打开数据库。
 
 ```go
 db, err := bolt.Open("my.db", 0666, &bolt.Options{ReadOnly: true})
@@ -624,13 +549,11 @@ if err != nil {
 }
 ```
 
-### Mobile Use (iOS/Android)
+### 手机上使用(ios和android)
 
-Bolt is able to run on mobile devices by leveraging the binding feature of the
-[gomobile](https://github.com/golang/mobile) tool. Create a struct that will
-contain your database logic and a reference to a `*bolt.DB` with a initializing
-constructor that takes in a filepath where the database file will be stored.
-Neither Android nor iOS require extra permissions or cleanup from using this method.
+利用gomobile工具的绑定特性，Bolt能够在移动设备上运行。
+创建一个包含数据库逻辑的结构体和一个接受数据库实际保存文件路径的初始化构造函数。
+无论是Android还是iOS，这种方法都不需要获得额外的权限或清理。
 
 ```go
 func NewBoltDB(filepath string) *BoltDB {
@@ -656,11 +579,9 @@ func (b *BoltDB) Close() {
 }
 ```
 
-Database logic should be defined as methods on this wrapper struct.
+数据库逻辑应该是在这个被包装的结构体上定义方法
 
-To initialize this struct from the native language (both platforms now sync
-their local storage to the cloud. These snippets disable that functionality for the
-database file):
+要从本地环境初始化这个结构(两个平台现在都将本地存储与云同步,这些代码片段会使数据库文件功能不可用):
 
 #### Android
 
@@ -703,184 +624,106 @@ Boltmobiledemo.BoltDB boltDB = Boltmobiledemo.NewBoltDB(path)
 
 ```
 
-## Resources
+## 相关资源
 
-For more information on getting started with Bolt, check out the following articles:
+要了解更多关于Bolt的信息，请查阅以下文章:
 
 * [Intro to BoltDB: Painless Performant Persistence](http://npf.io/2014/07/intro-to-boltdb-painless-performant-persistence/) by [Nate Finch](https://github.com/natefinch).
 * [Bolt -- an embedded key/value database for Go](https://www.progville.com/go/bolt-embedded-db-golang/) by Progville
 
 
-## Comparison with other databases
+## 和其他数据库比较
 
-### Postgres, MySQL, & other relational databases
+### Postgres, MySQL及其他的关系数据库
 
-Relational databases structure data into rows and are only accessible through
-the use of SQL. This approach provides flexibility in how you store and query
-your data but also incurs overhead in parsing and planning SQL statements. Bolt
-accesses all data by a byte slice key. This makes Bolt fast to read and write
-data by key but provides no built-in support for joining values together.
+关系数据库将数据结构化为行，并且只能通过使用SQL访问。
+这种方法提供了如何存储和查询数据的灵活性，但也会在解析和规划SQL语句时产生开销。
+Bolt通过一个字节片键访问所有数据。这使得Bolt能够快速读取和写入数据，
+但是并没有提供内置的支持来关联值。
 
-Most relational databases (with the exception of SQLite) are standalone servers
-that run separately from your application. This gives your systems
-flexibility to connect multiple application servers to a single database
-server but also adds overhead in serializing and transporting data over the
-network. Bolt runs as a library included in your application so all data access
-has to go through your application's process. This brings data closer to your
-application but limits multi-process access to the data.
-
+大多数关系数据库(除了SQLite之外)都是独立的服务器，它们与应用程序分开运行。
+这使您的系统能够灵活地将多个应用程序服务器连接到单个数据库服务器，
+但是增加了在网络上序列化和传输数据的开销。Bolt是一个包含在应用程序中的库，
+所以所有的数据访问都必须经过应用程序。这使数据更接近您的应用程序，但限制了对数据的多进程访问。
 
 ### LevelDB, RocksDB
 
-LevelDB and its derivatives (RocksDB, HyperLevelDB) are similar to Bolt in that
-they are libraries bundled into the application, however, their underlying
-structure is a log-structured merge-tree (LSM tree). An LSM tree optimizes
-random writes by using a write ahead log and multi-tiered, sorted files called
-SSTables. Bolt uses a B+tree internally and only a single file. Both approaches
-have trade-offs.
+LevelDB及其衍生物(RocksDB, HyperLevelDB)类似于Bolt，
+因为它们是绑定到应用程序中的库，但是，它们的底层结构是一种日志结构的merge-tree (LSM树)。
+LSM树通过使用前面的日志和多层、排序的文件SSTables来优化随机写入。Bolt在内部使用B+树，只有一个文件。
 
-If you require a high random write throughput (>10,000 w/sec) or you need to use
-spinning disks then LevelDB could be a good choice. If your application is
-read-heavy or does a lot of range scans then Bolt could be a good choice.
+如果您需要一个高的随机写吞吐量(>10000w/秒)，或者您需要使用机械磁盘，那么LevelDB可能是一个不错的选择。
+如果您的应用程序是重读的，或者进行了大量的范围扫描，那么Bolt可能是一个不错的选择。
 
-One other important consideration is that LevelDB does not have transactions.
-It supports batch writing of key/values pairs and it supports read snapshots
-but it will not give you the ability to do a compare-and-swap operation safely.
-Bolt supports fully serializable ACID transactions.
+另一个重要的考虑是，LevelDB没有事务。它支持键/值对的批写操作，它支持读取快照，
+但它不会让您安全地进行比较和交换操作。Bolt支持完全可序列化的ACID事务。
 
 
 ### LMDB
 
-Bolt was originally a port of LMDB so it is architecturally similar. Both use
-a B+tree, have ACID semantics with fully serializable transactions, and support
-lock-free MVCC using a single writer and multiple readers.
+Bolt最初是LMDB的一部分，因此在架构上类似。它们都使用B+树，使用ACID语义和完全可序列化的事务，并使用单个writer和多个reader支持无锁MVCC。
 
-The two projects have somewhat diverged. LMDB heavily focuses on raw performance
-while Bolt has focused on simplicity and ease of use. For example, LMDB allows
-several unsafe actions such as direct writes for the sake of performance. Bolt
-opts to disallow actions which can leave the database in a corrupted state. The
-only exception to this in Bolt is `DB.NoSync`.
+这两个项目有些不同。LMDB着重于原始性能，而Bolt专注于简单易用。
+例如，LMDB允许一些不安全的操作，比如直接为性能而写。bolt选择不允许操作，使数据库处于损坏状态。在Bolt中唯一的例外是DB.NoSync。
 
-There are also a few differences in API. LMDB requires a maximum mmap size when
-opening an `mdb_env` whereas Bolt will handle incremental mmap resizing
-automatically. LMDB overloads the getter and setter functions with multiple
-flags whereas Bolt splits these specialized cases into their own functions.
+API中也有一些不同之处。在打开mdb_env时，LMDB需要最大mmap大小，
+而Bolt将自动处理增量mmap大小调整。LMDB使用多个标志重载了getter和setter函数，而Bolt将这些特殊的情况分解为它们自己的函数。
 
+## 注意和限制
 
-## Caveats & Limitations
+为工作挑选合适的工具很重要，Bolt也不例外。在评估和使用Bolt时，需要注意以下几点:
 
-It's important to pick the right tool for the job and Bolt is no exception.
-Here are a few things to note when evaluating and using Bolt:
+* bolt适合阅读密集的工作负载。顺序写性能也很快速，但是随机写的速度很慢。您可以使用DB.Batch()或添加一个写前日志来帮助缓解这个问题。
 
-* Bolt is good for read intensive workloads. Sequential write performance is
-  also fast but random writes can be slow. You can use `DB.Batch()` or add a
-  write-ahead log to help mitigate this issue.
+* Bolt在内部使用了B+树，因此可以有很多随机的页面访问。ssd在旋转磁盘上提供了显著的性能提升。尽量避免长期运行的读取事务。Bolt使用的是copy-on-write，所以旧页面不能被回收，而旧的事务正在使用它们。
 
-* Bolt uses a B+tree internally so there can be a lot of random page access.
-  SSDs provide a significant performance boost over spinning disks.
+* 从bolt返回的字节片只在事务期间有效。一旦事务被提交或回滚，那么它们指向的内存可以被新页面重用，或者可以从虚拟内存中映射，在访问它时，您将看到一个意外的故障地址。
 
-* Try to avoid long running read transactions. Bolt uses copy-on-write so
-  old pages cannot be reclaimed while an old transaction is using them.
+* Bolt在数据库文件上使用了一个独占的写锁，因此它不能被多个进程共享。
 
-* Byte slices returned from Bolt are only valid during a transaction. Once the
-  transaction has been committed or rolled back then the memory they point to
-  can be reused by a new page or can be unmapped from virtual memory and you'll
-  see an `unexpected fault address` panic when accessing it.
+* 使用时要小心。对于具有随机插入的bucket，设置高填充百分比会导致数据库的页面利用率非常低
 
-* Bolt uses an exclusive write lock on the database file so it cannot be
-  shared by multiple processes.
+* 一般使用较大的桶。较小的bucket一旦超过页面大小(通常为4KB)，就会导致页面利用率不高
 
-* Be careful when using `Bucket.FillPercent`. Setting a high fill percent for
-  buckets that have random inserts will cause your database to have very poor
-  page utilization.
+* 批量加载大量随机写入到一个新桶中可能会很慢，因为在事务提交之前，页面不会分裂。不建议在单个事务中随机插入超过100,000个键/值对到单个新bucket中。
 
-* Use larger buckets in general. Smaller buckets causes poor page utilization
-  once they become larger than the page size (typically 4KB).
+* Bolt使用内存映射文件，因此底层操作系统处理数据的缓存。通常，操作系统会在内存中缓存尽可能多的文件，并根据需要释放内存到其他进程。这意味着在使用大型数据库时，Bolt可以显示很高的内存使用量。但是，这是预期的，操作系统将根据需要释放内存。Bolt可以处理比可用物理RAM大得多的数据库，只要它的内存映射适合于进程虚拟地址空间。在32位系统上可能会有问题。
 
-* Bulk loading a lot of random writes into a new bucket can be slow as the
-  page will not split until the transaction is committed. Randomly inserting
-  more than 100,000 key/value pairs into a single new bucket in a single
-  transaction is not advised.
+* 螺栓数据库中的数据结构是内存映射，因此数据文件将是endian特有的。这意味着您不能从一个小的endian机器复制一个螺栓文件到一个大的endian机器并使它工作。对于大多数用户来说，这并不是一个值得关注的问题，因为大多数现代的cpu都是小的endian。
 
-* Bolt uses a memory-mapped file so the underlying operating system handles the
-  caching of the data. Typically, the OS will cache as much of the file as it
-  can in memory and will release memory as needed to other processes. This means
-  that Bolt can show very high memory usage when working with large databases.
-  However, this is expected and the OS will release memory as needed. Bolt can
-  handle databases much larger than the available physical RAM, provided its
-  memory-map fits in the process virtual address space. It may be problematic
-  on 32-bits systems.
+* 由于页面是在磁盘上放置的，所以Bolt不能截断数据文件并将空闲页面返回到磁盘。相反，Bolt在其数据文件中维护一个未使用页面的空闲列表。这些空闲页面可以在以后的事务中重用。这对于许多用例来说很有效，因为数据库通常会增长。但是，需要注意的是，删除大量数据将不允许您回收磁盘上的空间。
 
-* The data structures in the Bolt database are memory mapped so the data file
-  will be endian specific. This means that you cannot copy a Bolt file from a
-  little endian machine to a big endian machine and have it work. For most
-  users this is not a concern since most modern CPUs are little endian.
-
-* Because of the way pages are laid out on disk, Bolt cannot truncate data files
-  and return free pages back to the disk. Instead, Bolt maintains a free list
-  of unused pages within its data file. These free pages can be reused by later
-  transactions. This works well for many use cases as databases generally tend
-  to grow. However, it's important to note that deleting large chunks of data
-  will not allow you to reclaim that space on disk.
-
-  For more information on page allocation, [see this comment][page-allocation].
+  更多信息, [see this comment][page-allocation].
 
 [page-allocation]: https://github.com/boltdb/bolt/issues/308#issuecomment-74811638
 
 
-## Reading the Source
+## 源代码阅读
 
-Bolt is a relatively small code base (<3KLOC) for an embedded, serializable,
-transactional key/value database so it can be a good starting point for people
-interested in how databases work.
+Bolt是一个相对较小的代码库(<3K)，它是一个嵌入式的、可序列化的、事务性的键/值数据库，
+因此对于那些对数据库工作感兴趣的人来说，它是一个很好的起点。
 
-The best places to start are the main entry points into Bolt:
+bolt最好的开始为以下几点:
 
-- `Open()` - Initializes the reference to the database. It's responsible for
-  creating the database if it doesn't exist, obtaining an exclusive lock on the
-  file, reading the meta pages, & memory-mapping the file.
+- `DB.Open()` 初始化对数据库的引用。如果数据库不存在，它负责创建数据库，获取文件的独占锁，读取元页面，以及内存映射文件。
 
-- `DB.Begin()` - Starts a read-only or read-write transaction depending on the
-  value of the `writable` argument. This requires briefly obtaining the "meta"
-  lock to keep track of open transactions. Only one read-write transaction can
-  exist at a time so the "rwlock" is acquired during the life of a read-write
-  transaction.
+- `DB.Begin()` 根据可写参数的值启动一个只读或读写事务。这需要简单地获取“meta”锁来跟踪公开事务。只有一个读写事务可以同时存在，因此“rwlock”是在读写事务的生命周期中获得的。
 
-- `Bucket.Put()` - Writes a key/value pair into a bucket. After validating the
-  arguments, a cursor is used to traverse the B+tree to the page and position
-  where they key & value will be written. Once the position is found, the bucket
-  materializes the underlying page and the page's parent pages into memory as
-  "nodes". These nodes are where mutations occur during read-write transactions.
-  These changes get flushed to disk during commit.
+- `Bucket.Put()` 将一个键/值对写入到一个bucket中。在验证参数之后，将使用游标遍历B+树，并将其键值和值写入位置。找到位置后，bucket将底层页面和页面的父页面变为“节点”。这些节点是在读写事务期间发生突变的地方。这些更改在提交期间被刷新到磁盘。
 
-- `Bucket.Get()` - Retrieves a key/value pair from a bucket. This uses a cursor
-  to move to the page & position of a key/value pair. During a read-only
-  transaction, the key and value data is returned as a direct reference to the
-  underlying mmap file so there's no allocation overhead. For read-write
-  transactions, this data may reference the mmap file or one of the in-memory
-  node values.
+- `Bucket.Get()` 从一个桶中检索键/值对。它使用游标移动到键/值对的页面和位置。在只读事务期间，返回键和值数据作为对底层mmap文件的直接引用，因此没有分配开销。对于读写事务，此数据可以引用mmap文件或内存中的节点值之一。
 
-- `Cursor` - This object is simply for traversing the B+tree of on-disk pages
-  or in-memory nodes. It can seek to a specific key, move to the first or last
-  value, or it can move forward or backward. The cursor handles the movement up
-  and down the B+tree transparently to the end user.
+- `Curser` 该对象只是用于遍历磁盘页或内存节点中的B+树。它可以寻找一个特定的键，移动到第一个或最后一个值，或者它可以向前或向后移动。游标以透明的方式将B+树上下移动到最终用户。
 
-- `Tx.Commit()` - Converts the in-memory dirty nodes and the list of free pages
-  into pages to be written to disk. Writing to disk then occurs in two phases.
-  First, the dirty pages are written to disk and an `fsync()` occurs. Second, a
-  new meta page with an incremented transaction ID is written and another
-  `fsync()` occurs. This two phase write ensures that partially written data
-  pages are ignored in the event of a crash since the meta page pointing to them
-  is never written. Partially written meta pages are invalidated because they
-  are written with a checksum.
+- `Tx.Commit()` 将内存中的脏节点和空闲页面的列表转换为要写到磁盘的页面。写入磁盘的过程分为两个阶段。首先，将脏页面写入磁盘，然后发生fsync()。其次，写入一个带有递增事务ID的新元页面，并出现另一个fsync()。这两个阶段编写确保在发生崩溃时忽略部分写入的数据页，因为指向它们的meta页面从未被写入。部分写的元页无效，因为它们是用校验和写的。
 
 If you have additional notes that could be helpful for others, please submit
 them via pull request.
 
 
-## Other Projects Using Bolt
+## 使用Bolt的项目
 
-Below is a list of public, open source projects that use Bolt:
+下面是公开开源的使用bolt的项目:
 
 * [BoltDbWeb](https://github.com/evnix/boltdbweb) - A web based GUI for BoltDB files.
 * [Operation Go: A Routine Mission](http://gocode.io) - An online programming game for Golang using Bolt for user accounts and a leaderboard.
