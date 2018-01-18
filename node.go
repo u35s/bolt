@@ -51,8 +51,9 @@ func (n *node) size() int {
 }
 
 // sizeLessThan 如果节点小于给定的大小返回true
-// sizeLessThan returns true if the node is less than a given size.
 // 这是一个当我们仅仅需要知道它是否适合某个page的大小而避免大节点的运算优化
+
+// sizeLessThan returns true if the node is less than a given size.
 // This is an optimization to avoid calculating a large node when we only need
 // to know if it fits inside a certain page size.
 func (n *node) sizeLessThan(v int) bool {
@@ -268,8 +269,9 @@ func (n *node) write(p *page) {
 }
 
 // split 如果合适的话,将节点拆分为多个更小的节点
-// split breaks up a node into multiple smaller nodes, if appropriate.
 // 这个只能被spill函数调用
+
+// split breaks up a node into multiple smaller nodes, if appropriate.
 // This should only be called from the spill() function.
 func (n *node) split(pageSize int) []*node {
 	var nodes []*node
@@ -293,10 +295,12 @@ func (n *node) split(pageSize int) []*node {
 }
 
 // splitTwo 如果合适的话,将节点差分成两个更小的节点
+
 // splitTwo breaks up a node into two smaller nodes, if appropriate.
 // This should only be called from the split() function.
 func (n *node) splitTwo(pageSize int) (*node, *node) {
 	// 如果page不满足两个page应该有的节点数或节点可以放在一个page中忽略拆分
+
 	// Ignore the split if the page doesn't have at least enough nodes for
 	// two pages or if the nodes can fit in a single page.
 	if len(n.inodes) <= (minKeysPerPage*2) || n.sizeLessThan(pageSize) {
@@ -342,8 +346,9 @@ func (n *node) splitTwo(pageSize int) (*node, *node) {
 }
 
 // splitIndex 找到给定阀值页的填充位置
-// splitIndex finds the position where a page will fill a given threshold.
 // 它返回索引和第一页的大小
+
+// splitIndex finds the position where a page will fill a given threshold.
 // It returns the index as well as the size of the first page.
 // This is only be called from split().
 func (n *node) splitIndex(threshold int) (index, sz int) {
@@ -370,8 +375,9 @@ func (n *node) splitIndex(threshold int) (index, sz int) {
 }
 
 // spill 将节点写入脏页,并按运行方式拆分
-// spill writes the nodes to dirty pages and splits nodes as it goes.
 // 如果脏页无法分配则返回错误
+
+// spill writes the nodes to dirty pages and splits nodes as it goes.
 // Returns an error if dirty pages cannot be allocated.
 func (n *node) spill() error {
 	var tx = n.bucket.tx
@@ -380,9 +386,10 @@ func (n *node) spill() error {
 	}
 
 	// 首先是溢出的子节点,子节点在分隔合并时可以充当同级节点,所以我们不能使用范围循环
+	// 我们必须在每次循环迭代检查子节点的大小
+
 	// Spill child nodes first. Child nodes can materialize sibling nodes in
 	// the case of split-merge so we cannot use a range loop. We have to check
-	// 我们必须在每次循环迭代检查子节点的大小
 	// the children size on every loop iteration.
 	sort.Sort(n.children)
 	for i := 0; i < len(n.children); i++ {
@@ -440,8 +447,9 @@ func (n *node) spill() error {
 	}
 
 	// 如果根节点拆分并且创建了一个新的根节点的话,我们也需要spill根节点
-	// If the root node split and created a new root then we need to spill that
 	// 首先清除子节点确保他们不会重新溢出
+
+	// If the root node split and created a new root then we need to spill that
 	// as well. We'll clear out the children to make sure it doesn't try to respill.
 	if n.parent != nil && n.parent.pgid == 0 {
 		n.children = nil
@@ -452,6 +460,7 @@ func (n *node) spill() error {
 }
 
 // 如果节点填充大小低于阀值或者没有足够的keys,rebalance将会试着合并兄弟节点
+
 // rebalance attempts to combine the node with sibling nodes if the node fill
 // size is below a threshold or if there are not enough keys.
 func (n *node) rebalance() {
@@ -571,8 +580,9 @@ func (n *node) rebalance() {
 }
 
 // 从在内存中的孩子列表中移除一个节点
-// removes a node from the list of in-memory children.
 // 这不影响内部节点
+
+// removes a node from the list of in-memory children.
 // This does not affect the inodes.
 func (n *node) removeChild(target *node) {
 	for i, child := range n.children {
@@ -584,8 +594,9 @@ func (n *node) removeChild(target *node) {
 }
 
 // dereference 造成节点复制所有的内部节点中key/value引用到堆内存中
-// dereference causes the node to copy all its inode key/value references to heap memory.
 // 当mmap被重新分配时此操作是必须的,所以所有的内部节点不会指向过期的数据
+
+// dereference causes the node to copy all its inode key/value references to heap memory.
 // This is required when the mmap is reallocated so inodes are not pointing to stale data.
 func (n *node) dereference() {
 	if n.key != nil {
@@ -662,9 +673,10 @@ func (s nodes) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s nodes) Less(i, j int) bool { return bytes.Compare(s[i].inodes[0].key, s[j].inodes[0].key) == -1 }
 
 // inode 相当于一个节点中的内部节点
+// 它可以用来指向页中的元素或者还有被添加到页中的元素
+
 // inode represents an internal node inside of a node.
 // It can be used to point to elements in a page or point
-// 它可以用来指向页中的元素或者还有被添加到页中的元素
 // to an element which hasn't been added to a page yet.
 type inode struct {
 	flags uint32

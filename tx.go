@@ -15,17 +15,20 @@ import (
 type txid uint64
 
 // Tx 表示数据库中一个只读或者读写事务
-// Tx represents a read-only or read/write transaction on the database.
 // 只读事务可以被用来检索键的值和创建游标
-// Read-only transactions can be used for retrieving values for keys and creating cursors.
 // 读写事务可以创建,删除桶和键
+
+// Tx represents a read-only or read/write transaction on the database.
+// Read-only transactions can be used for retrieving values for keys and creating cursors.
 // Read/write transactions can create and remove buckets and create and remove keys.
-//
+
 // 重要提示:你必须提交或回滚当事务完成时
 // IMPORTANT: You must commit or rollback transactions when you are done with
+
 // 页面不会被writer回收利用直到没有事务使用它们
-// them. Pages can not be reclaimed by the writer until no more transactions
 // 一个长时间运行的读事务会造成数据库使用空间快速增加
+
+// them. Pages can not be reclaimed by the writer until no more transactions
 // are using them. A long running read transaction can cause the database to
 // quickly grow.
 type Tx struct {
@@ -39,13 +42,15 @@ type Tx struct {
 	commitHandlers []func()
 
 	// WriteFlag用于指定写相关方法的标识，如WriteTo()。
-	// WriteFlag specifies the flag for write-related methods like WriteTo().
 	// Tx用指定标识打开数据库文件以复制数据。
+
+	// WriteFlag specifies the flag for write-related methods like WriteTo().
 	// Tx opens the database file with the specified flag to copy the data.
-	//
-	// 默认情况下标识是不设置的,这在内存使用空间非常多的情况下好使的
-	// By default, the flag is unset, which works well for mostly in-memory
+
+	// 默认情况下标识是不设置的,这在内存使用空间非常多的情况下是好使的
 	// 当数据库比可使用内存大的多的情况下设置标识为syscall.O_DIRECT避免页缓存被破坏
+
+	// By default, the flag is unset, which works well for mostly in-memory
 	// workloads. For databases that are much larger than available RAM,
 	// set the flag to syscall.O_DIRECT to avoid trashing the page cache.
 	WriteFlag int
@@ -101,12 +106,13 @@ func (tx *Tx) Writable() bool {
 }
 
 // Cursor 创建与root桶关联的游标
-// Cursor creates a cursor associated with the root bucket.
 // root桶的键全部指向bucket的情况下游标中所有元素将返回nil
-// All items in the cursor will return a nil value because all root bucket keys point to buckets.
 // 游标只有在事务开始期间才是可用的
-// The cursor is only valid as long as the transaction is open.
 // 不要在事务关闭后使用游标
+
+// Cursor creates a cursor associated with the root bucket.
+// All items in the cursor will return a nil value because all root bucket keys point to buckets.
+// The cursor is only valid as long as the transaction is open.
 // Do not use a cursor after the transaction is closed.
 func (tx *Tx) Cursor() *Cursor {
 	return tx.root.Cursor()
@@ -119,46 +125,51 @@ func (tx *Tx) Stats() TxStats {
 }
 
 // Bucket通过名字表示一个桶
+// 如果桶不存在就返回nil
+// 桶实例仅在事务生命周期内可用
+
 // Bucket retrieves a bucket by name.
-// 如果bucket不存在就返回nil
 // Returns nil if the bucket does not exist.
-// bucket 实例仅在事务生命周期内可用
 // The bucket instance is only valid for the lifetime of the transaction.
 func (tx *Tx) Bucket(name []byte) *Bucket {
 	return tx.root.Bucket(name)
 }
 
 // CreateBucket 新建一个桶.
-// CreateBucket creates a new bucket.
 // 如果桶已经存在,桶名长度为0或太长,就返回一个错误
+// 桶实例仅在事务生命周期内可用
+
+// CreateBucket creates a new bucket.
 // Returns an error if the bucket already exists, if the bucket name is blank, or if the bucket name is too long.
-// bucket 实例仅在事务生命周期内可用
 // The bucket instance is only valid for the lifetime of the transaction.
 func (tx *Tx) CreateBucket(name []byte) (*Bucket, error) {
 	return tx.root.CreateBucket(name)
 }
 
 // CreateBucketIfNotExists 在桶不存在的情况新建一个桶.
-// CreateBucketIfNotExists creates a new bucket if it doesn't already exist.
 // 如果桶已经存在,桶名长度为0或太长,就返回一个错误
+// 桶实例仅在事务生命周期内可用
+
+// CreateBucketIfNotExists creates a new bucket if it doesn't already exist.
 // Returns an error if the bucket name is blank, or if the bucket name is too long.
-// bucket 实例仅在事务生命周期内可用
 // The bucket instance is only valid for the lifetime of the transaction.
 func (tx *Tx) CreateBucketIfNotExists(name []byte) (*Bucket, error) {
 	return tx.root.CreateBucketIfNotExists(name)
 }
 
 // DeleteBucket 删除一个桶.
-// DeleteBucket deletes a bucket.
 // 如果桶找不到或者key的值不是桶返回错误
+
+// DeleteBucket deletes a bucket.
 // Returns an error if the bucket cannot be found or if the key represents a non-bucket value.
 func (tx *Tx) DeleteBucket(name []byte) error {
 	return tx.root.DeleteBucket(name)
 }
 
 // ForEach 为root中的每一个bucket执行一个函数
-// ForEach executes a function for each bucket in the root.
 // 如果执行的函数返回错误迭代器将会停止并把错误返回给调用者
+
+// ForEach executes a function for each bucket in the root.
 // If the provided function returns an error then the iteration is stopped and
 // the error is returned to the caller.
 func (tx *Tx) ForEach(fn func(name []byte, b *Bucket) error) error {
@@ -177,8 +188,9 @@ func (tx *Tx) OnCommit(fn func()) {
 }
 
 // Commit 将全部改变写到磁盘并且更新所有meta页
-// Commit writes all changes to disk and updates the meta page.
 // 如果磁盘写入有错误或者已经被只读事务调用返回一个错误
+
+// Commit writes all changes to disk and updates the meta page.
 // Returns an error if a disk write error occurs, or if Commit is
 // called on a read-only transaction.
 func (tx *Tx) Commit() error {
@@ -216,8 +228,9 @@ func (tx *Tx) Commit() error {
 	opgid := tx.meta.pgid
 
 	// 释放freelist,分配新页
-	// Free the freelist and allocate new pages for it. This will overestimate
 	// 这只会高估freelist的大小不会低估(这是糟糕的)
+
+	// Free the freelist and allocate new pages for it. This will overestimate
 	// the size of the freelist but not underestimate the size (which would be bad).
 	tx.db.freelist.free(tx.meta.txid, tx.db.page(tx.meta.freelist))
 	p, err := tx.allocate((tx.db.freelist.size() / tx.db.pageSize) + 1)
@@ -249,8 +262,9 @@ func (tx *Tx) Commit() error {
 	}
 
 	// 如果严格模式启用,执行一致性检查
-	// If strict mode is enabled then perform a consistency check.
 	// panic只会报告第一个一致性错误
+
+	// If strict mode is enabled then perform a consistency check.
 	// Only the first consistency error is reported in the panic.
 	if tx.db.StrictMode {
 		ch := tx.Check()
@@ -289,8 +303,9 @@ func (tx *Tx) Commit() error {
 }
 
 // Rollback 关闭事务并且忽略所有的更新
-// Rollback closes the transaction and ignores all previous updates. Read-only
 // 只读事务一定回滚和不提交
+
+// Rollback closes the transaction and ignores all previous updates. Read-only
 // transactions must be rolled back and not committed.
 func (tx *Tx) Rollback() error {
 	_assert(!tx.managed, "managed tx rollback not allowed")
@@ -350,8 +365,9 @@ func (tx *Tx) close() {
 }
 
 // Copy 将整个数据库写入到writer
-// Copy writes the entire database to a writer.
 // 这个函数为了向后兼容而存在的,请使用WriterTo替代
+
+// Copy writes the entire database to a writer.
 // This function exists for backwards compatibility. Use WriteTo() instead.
 func (tx *Tx) Copy(w io.Writer) error {
 	_, err := tx.WriteTo(w)
@@ -362,8 +378,8 @@ func (tx *Tx) Copy(w io.Writer) error {
 // WriteTo writes the entire database to a writer.
 // If err == nil then exactly tx.Size() bytes will be written into the writer.
 func (tx *Tx) WriteTo(w io.Writer) (n int64, err error) {
-	// Attempt to open reader with WriteFlag
 	// 尝试用WriteFlag打开一个Reader
+	// Attempt to open reader with WriteFlag
 	f, err := os.OpenFile(tx.db.path, os.O_RDONLY|tx.WriteFlag, 0)
 	if err != nil {
 		return 0, err
@@ -412,8 +428,9 @@ func (tx *Tx) WriteTo(w io.Writer) (n int64, err error) {
 }
 
 // CopyFile 复制整个数据到给定的路径文件
-// CopyFile copies the entire database to file at the given path.
 // 在复制期间有一个只读事务,所以程序在备份时继续使用数据库是安全的
+
+// CopyFile copies the entire database to file at the given path.
 // A reader transaction is maintained during the copy so it is safe to continue
 // using the database while a copy is in progress.
 func (tx *Tx) CopyFile(path string, mode os.FileMode) error {
@@ -431,17 +448,17 @@ func (tx *Tx) CopyFile(path string, mode os.FileMode) error {
 }
 
 // Check 为这个事务在数据库中执行一致性检查
-// Check performs several consistency checks on the database for this transaction.
 // 发现任何的不一致将会返回错误
-// An error is returned if any inconsistency is found.
-//
 // 在可写的事务中可以并发的安全运行.
-// It can be safely run concurrently on a writable transaction. However, this
 // 然而,由于缓存的存在，这使得大型数据库和子桶特别多数据库的开销很大。
-// incurs a high cost for large databases and databases with a lot of subbuckets
 // 如果在只读事务上运行将没有开销.
-// because of caching. This overhead can be removed if running on a read-only
 // 可在同一时间执行其他的writer事务是不安全的。
+
+// Check performs several consistency checks on the database for this transaction.
+// An error is returned if any inconsistency is found.
+// It can be safely run concurrently on a writable transaction. However, this
+// incurs a high cost for large databases and databases with a lot of subbuckets
+// because of caching. This overhead can be removed if running on a read-only
 // transaction, however, it is not safe to execute other writer transactions at
 // the same time.
 func (tx *Tx) Check() <-chan error {
@@ -666,8 +683,9 @@ func (tx *Tx) writeMeta() error {
 }
 
 // page 用给定页的id返回页的引用
-// page returns a reference to the page with a given id.
 // 如果页已经被写入则返回临时缓冲页
+
+// page returns a reference to the page with a given id.
 // If page has been written to then a temporary buffered page is returned.
 func (tx *Tx) page(id pgid) *page {
 	// 首先检查脏页
@@ -702,8 +720,9 @@ func (tx *Tx) forEachPage(pgid pgid, depth int, fn func(*page, int)) {
 }
 
 // Page 返回给定页码的页信息
-// Page returns page information for a given page number.
 // 在可写事务才是并发安全的
+
+// Page returns page information for a given page number.
 // This is only safe for concurrent use when used by a writable transaction.
 func (tx *Tx) Page(id int) (*PageInfo, error) {
 	if tx.db == nil {

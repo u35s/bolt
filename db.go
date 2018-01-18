@@ -14,14 +14,21 @@ import (
 	"unsafe"
 )
 
+// 重新映射时可以采取的最大step
 // The largest step that can be taken when remapping the mmap.
 const maxMmapStep = 1 << 30 // 1GB
 
+// 数据文件格式版本
 // The data file format version.
 const version = 2
 
+// 表明文件是一个BoltDB的标识
 // Represents a marker value to indicate that a file is a Bolt DB.
 const magic uint32 = 0xED0CDAED
+
+// IgnoreNoSync 指定DB的NoSync字段是否被忽略当同步改变到一个文件时
+// 这在一些操作系统上是必须的,例如OpenBSD,没有统一的缓冲区
+// 写操作必须用系统调用msync(2)
 
 // IgnoreNoSync specifies whether the NoSync field of a DB is ignored when
 // syncing changes to a file.  This is required as some operating systems,
@@ -29,6 +36,7 @@ const magic uint32 = 0xED0CDAED
 // must be synchronized using the msync(2) syscall.
 const IgnoreNoSync = runtime.GOOS == "openbsd"
 
+// DB实例中默认的值
 // Default values if not set in a DB instance.
 const (
 	DefaultMaxBatchSize  int = 1000
@@ -36,30 +44,50 @@ const (
 	DefaultAllocSize         = 16 * 1024 * 1024
 )
 
+// 默认页容量是系统的页容量
 // default page size for db is set to the OS page size.
 var defaultPageSize = os.Getpagesize()
+
+// DB表示存储在磁盘文件上的桶集合
+// 所有的数据接入都是通过DB的事务来来获得的
+// DB所有的函数将会返回一个ErrDatabaseNotOpen如果在Open函数未被调用前
 
 // DB represents a collection of buckets persisted to a file on disk.
 // All data access is performed through transactions which can be obtained through the DB.
 // All the functions on DB will return a ErrDatabaseNotOpen if accessed before Open() is called.
 type DB struct {
+	// 在严格模式下,数据库在每次提交后都会执行Check()
+	// 如果数据不一致就会panic
+	// 这个标志会有很大的性能开销,只有在调试情况下才应该被使用
+
 	// When enabled, the database will perform a Check() after every commit.
 	// A panic is issued if the database is in an inconsistent state. This
 	// flag has a large performance impact so it should only be used for
 	// debugging purposes.
 	StrictMode bool
 
+	// 设置NoSync将会使数据库在每次提交后跳过commit
+	// 这在你批量加载数据到数据库是非常有用的
+	// 你可以在系统故障或数据损坏的情况下启用,正常情况下不要设置
+
 	// Setting the NoSync flag will cause the database to skip fsync()
 	// calls after each commit. This can be useful when bulk loading data
 	// into a database and you can restart the bulk load in the event of
 	// a system failure or database corruption. Do not set this flag for
 	// normal use.
-	//
+
+	// IgnoreNoSync常量设置为True,这个将会忽略
+
 	// If the package global IgnoreNoSync constant is true, this value is
 	// ignored.  See the comment on that constant for more details.
-	//
+
+	// 这是不安全的,使用小心
 	// THIS IS UNSAFE. PLEASE USE WITH CAUTION.
 	NoSync bool
+
+	// 如果为true,在增长数据库时跳过truncate调用
+	// 将此设置为true只在非ext3/ext4系统上是安全的
+	// 在重新映射时跳过擦除可以避免硬盘空间的预先分配和绕过truncate()和fsync()系统调用
 
 	// When true, skips the truncate call when growing the database.
 	// Setting this to true is only safe on non-ext3/ext4 systems.
@@ -69,9 +97,14 @@ type DB struct {
 	// https://github.com/boltdb/bolt/issues/284
 	NoGrowSync bool
 
+	// 如果你想快速读取整个数据库,你可以在linux 2.6.23以的版本中
+	// 设置MmapFlat为syscall.MAP_POPULATE开启顺序预读
 	// If you want to read the entire database fast, you can set MmapFlag to
 	// syscall.MAP_POPULATE on Linux 2.6.23+ for sequential read-ahead.
 	MmapFlags int
+
+	// MaxBatchSize是批处理的最大容量,默认情况下在打开时从DefaultMaxBatchSize拷贝
+	// 如果小于或等于0将禁用批处理,不能并发调用
 
 	// MaxBatchSize is the maximum size of a batch. Default value is
 	// copied from DefaultMaxBatchSize in Open.
@@ -81,6 +114,10 @@ type DB struct {
 	// Do not change concurrently with calls to Batch.
 	MaxBatchSize int
 
+	// MaxBatchDelay 是批量开始前的最大延迟,
+	//默认情况下在打开时从DefaultMaxBatchDelay复制
+	//如果小于等于0,也会禁用批处理,不能并发调用
+
 	// MaxBatchDelay is the maximum delay before a batch starts.
 	// Default value is copied from DefaultMaxBatchDelay in Open.
 	//
@@ -88,6 +125,9 @@ type DB struct {
 	//
 	// Do not change concurrently with calls to Batch.
 	MaxBatchDelay time.Duration
+
+	// AllocSize是在数据库需要创建新页面时分配的空间量。
+	// 这样做是为了在生成数据文件时将truncate()和fsync()的成本开销。
 
 	// AllocSize is the amount of space allocated when the database
 	// needs to create new pages. This is done to amortize the cost
@@ -176,6 +216,11 @@ func Open(path string, mode os.FileMode, options *Options) (*DB, error) {
 		return nil, err
 	}
 
+	// 锁定文件，以便在读写模式中使用Bolt的其他进程不能同时使用数据库。
+	// 这将导致错误，因为这两个进程将分别编写元页面和空闲页面。
+	// 如果options.ReadOnly没有设置的话,数据库文件将会使用专有锁(只有一个进程可以获取锁)
+	// 否则使用共享锁(不止一个程序可以同时持有一个锁)
+
 	// Lock file so that other processes using Bolt in read-write mode cannot
 	// use the database  at the same time. This would cause corruption since
 	// the two processes would write meta pages and free pages separately.
@@ -240,6 +285,8 @@ func Open(path string, mode os.FileMode, options *Options) (*DB, error) {
 	return db, nil
 }
 
+// mmap 打开底层内存映射文件并初始化meta引用,minsz是新mmap的最小值
+
 // mmap opens the underlying memory-mapped file and initializes the meta references.
 // minsz is the minimum size that the new mmap can be.
 func (db *DB) mmap(minsz int) error {
@@ -294,6 +341,7 @@ func (db *DB) mmap(minsz int) error {
 	return nil
 }
 
+// munmap 取消数据文件在内存中的映射
 // munmap unmaps the data file from memory.
 func (db *DB) munmap() error {
 	if err := munmap(db); err != nil {
@@ -301,6 +349,10 @@ func (db *DB) munmap() error {
 	}
 	return nil
 }
+
+// mmapSize根据数据库的当前大小确定mmap大小。
+// 最小大小是32KB，并在达到1GB之前加倍。
+// 如果新的mmap大小大于允许的最大值，则返回错误
 
 // mmapSize determines the appropriate size for the mmap given the current size
 // of the database. The minimum size is 32KB and doubles until it reaches 1GB.
@@ -386,6 +438,9 @@ func (db *DB) init() error {
 	return nil
 }
 
+// Close 释放全部的数据库资源
+// 在关闭数据库前所有的事务必须关闭
+
 // Close releases all database resources.
 // All transactions must be closed before closing the database.
 func (db *DB) Close() error {
@@ -438,6 +493,19 @@ func (db *DB) close() error {
 	db.path = ""
 	return nil
 }
+
+// Begin开始一个新事物
+// 读事务是并发安全的但是写事务同一时间只能有一个
+// 开始多个写事务将会造成调用阻塞直到当前写事务已经完成
+
+// 事务不应该相互依赖。
+// 在同一个goroutine中打开一个读事务和一个写事务会导致写入器陷入死锁。
+// 因为数据库周期性地需要重新映射自身而读取事务打开期间不能做映射,因为它在增长
+
+// 如果需要长期运行的读事务(例如，快照事务)，您可能需要
+// 设置DB.InitialMmapSize具有足够大的值以避免写入事务的潜在阻塞。
+
+// 重要提示: 在你完成后必须关闭只读事务否则数据库将不会释放老的页
 
 // Begin starts a new transaction.
 // Multiple read-only transactions can be used concurrently but only one

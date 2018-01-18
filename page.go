@@ -169,8 +169,9 @@ func (a pgids) merge(b pgids) pgids {
 }
 
 // mergepgids 将a和b的已排序的联合复制到dst中。
-// mergepgids copies the sorted union of a and b into dst.
 // 如果dst空间不足,将会panic
+
+// mergepgids copies the sorted union of a and b into dst.
 // If dst is too small, it panics.
 func mergepgids(dst, a, b pgids) {
 	if len(dst) < len(a)+len(b) {
