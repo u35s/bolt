@@ -13,6 +13,8 @@ Bolt是根据 [Howard Chu's][hyc_symas][LMDB 项目][lmdb] 开发的一个存粹
 
 Bolt是稳定的, API和文件格式也是固定的. 单元测试完全覆盖和随机黑盒测试确保数据一致性和线程安全。
 Bolt当前被用在T级别高负载的产品环境中，Shopify和Heroku也每天使用Bolt服务
+## BoltDB中文网
+为了让国内开发者更方便的了解,学习和使用Bolt,因此成立[BoltDB中文网](http://boltdb.cn)。BoltDB代码精简,质量高,对BoltDB的学习将会使你对数据库是如何工作有深刻的认识,欢迎大家投稿,有兴趣的同学可以一起来维护. BoltDB QQ群:687423439
 
 ## 开发者对项目的说明
 
