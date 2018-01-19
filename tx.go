@@ -16,7 +16,7 @@ type txid uint64
 
 // Tx 表示数据库中一个只读或者读写事务
 // 只读事务可以被用来检索键的值和创建游标
-// 读写事务可以创建,删除桶和键
+// 读写事务还可以创建,删除桶和键
 
 // Tx represents a read-only or read/write transaction on the database.
 // Read-only transactions can be used for retrieving values for keys and creating cursors.

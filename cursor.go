@@ -6,6 +6,13 @@ import (
 	"sort"
 )
 
+// Cursor表示一个迭代器,该迭代器可以按顺序遍历bucket中的所有键/值对。
+// 如果value等于nil,则为嵌套的桶
+// 可以从事务中创建Cursor,只要事务是打开的,就有效。
+// 从Cursor返回的键和值只在事务的生命周期内有效。
+// 在使用Cursor进行遍历时更改数据可能导致其无效并返回错误的键或值。
+// 您必须在更改数据之后重新定位光标。
+
 // Cursor represents an iterator that can traverse over all key/value pairs in a bucket in sorted order.
 // Cursors see nested buckets with value == nil.
 // Cursors can be obtained from a transaction and are valid as long as the transaction is open.

@@ -32,6 +32,7 @@ const (
 // This value can be changed by setting Bucket.FillPercent.
 const DefaultFillPercent = 0.5
 
+// Bucket 表示数据库中的键值对集合
 // Bucket represents a collection of key/value pairs inside the database.
 type Bucket struct {
 	*bucket
