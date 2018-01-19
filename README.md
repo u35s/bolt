@@ -59,7 +59,7 @@ Bolt当前被用在T级别高负载的产品环境中，Shopify和Heroku也每�
   - [LevelDB-RocksDB](#LevelDB-RocksDB)
   - [LMDB](#LMDB)
 - [注意和限制](#注意和限制)
-- [源码阅读](#源码阅读)
+- [源代码阅读](#源代码阅读)
 - [使用Bolt的项目](#使用Bolt的项目)
 
 ## 开始
