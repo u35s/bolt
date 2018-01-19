@@ -52,11 +52,11 @@ Bolt当前被用在T级别高负载的产品环境中，Shopify和Heroku也每�
   - [数据备份](#数据备份)
   - [统计](#统计)
   - [只读模式](#只读模式)
-  - [手机上使用(iOS/Android)](#手机上使用)
+  - [手机上使用](#手机上使用)
 - [相关资源](#相关资源)
 - [和其他数据库比较](#和其他数据库比较)
-  - [Postgres, MySQL及其他的关系数据库](#Postgres, MySQL及其他的关系数据库)
-  - [LevelDB, RocksDB](#LevelDB, RocksDB)
+  - [Postgres-MySQL及其他的关系数据库](#Postgres-MySQL及其他的关系数据库)
+  - [LevelDB-RocksDB](#LevelDB-RocksDB)
   - [LMDB](#LMDB)
 - [注意和限制](#注意和限制)
 - [源码阅读](#源码阅读)
@@ -551,7 +551,7 @@ if err != nil {
 }
 ```
 
-### 手机上使用(ios和android)
+### 手机上使用
 
 利用gomobile工具的绑定特性，Bolt能够在移动设备上运行。
 创建一个包含数据库逻辑的结构体和一个接受数据库实际保存文件路径的初始化构造函数。
@@ -575,10 +575,11 @@ type BoltDB struct {
 func (b *BoltDB) Path() string {
 	return b.db.Path()
 }
-
+		
 func (b *BoltDB) Close() {
 	b.db.Close()
 }
+
 ```
 
 数据库逻辑应该是在这个被包装的结构体上定义方法
@@ -636,7 +637,7 @@ Boltmobiledemo.BoltDB boltDB = Boltmobiledemo.NewBoltDB(path)
 
 ## 和其他数据库比较
 
-### Postgres, MySQL及其他的关系数据库
+### Postgres-MySQL及其他的关系数据库
 
 关系数据库将数据结构化为行，并且只能通过使用SQL访问。
 这种方法提供了如何存储和查询数据的灵活性，但也会在解析和规划SQL语句时产生开销。
@@ -648,7 +649,7 @@ Bolt通过一个字节片键访问所有数据。这使得Bolt能够快速读取
 但是增加了在网络上序列化和传输数据的开销。Bolt是一个包含在应用程序中的库，
 所以所有的数据访问都必须经过应用程序。这使数据更接近您的应用程序，但限制了对数据的多进程访问。
 
-### LevelDB, RocksDB
+### LevelDB-RocksDB
 
 LevelDB及其衍生物(RocksDB, HyperLevelDB)类似于Bolt，
 因为它们是绑定到应用程序中的库，但是，它们的底层结构是一种日志结构的merge-tree (LSM树)。
