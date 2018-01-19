@@ -248,8 +248,9 @@ func (n *node) write(p *page) {
 		}
 
 		// 如果key+value的大小大于最大的分配空间
-		// If the length of key+value is larger than the max allocation size
 		// 我们需要重新分配空间(此处只是强制转化一下避免panic当p.ptr指向的空间大于maxAllocSize)
+
+		// If the length of key+value is larger than the max allocation size
 		// then we need to reallocate the byte array pointer.
 		//
 		// See: https://github.com/boltdb/bolt/pull/335
@@ -537,7 +538,7 @@ func (n *node) rebalance() {
 	// If both this node and the target node are too small then merge them.
 	if useNextSibling {
 
-		// 移动全部子节点
+		// 移除全部子节点
 		// Reparent all child nodes being moved.
 		for _, inode := range target.inodes {
 			if child, ok := n.bucket.nodes[inode.pgid]; ok {
@@ -555,7 +556,7 @@ func (n *node) rebalance() {
 		delete(n.bucket.nodes, target.pgid)
 		target.free()
 	} else {
-		// 移动全部子节点
+		// 移除全部子节点
 		// Reparent all child nodes being moved.
 		for _, inode := range n.inodes {
 			if child, ok := n.bucket.nodes[inode.pgid]; ok {

@@ -35,19 +35,27 @@ const DefaultFillPercent = 0.5
 // Bucket represents a collection of key/value pairs inside the database.
 type Bucket struct {
 	*bucket
-	tx       *Tx                // the associated transaction
+	tx       *Tx                // the associated transaction 相关事务
 	buckets  map[string]*Bucket // subbucket cache
-	page     *page              // inline page reference
-	rootNode *node              // materialized node for the root page.
+	page     *page              // inline page reference 内嵌页引用
+	rootNode *node              // materialized node for the root page.  根页的实际节点
 	nodes    map[pgid]*node     // node cache
+
+	// 设置当它们分开时填充节点的阈值。默认情况下，这个bucket将填充到50%，
+	// 但是如果您知道您的写入主要是追加的，那么增加这个值是很有用的。
 
 	// Sets the threshold for filling nodes when they split. By default,
 	// the bucket will fill to 50% but it can be useful to increase this
 	// amount if you know that your write workloads are mostly append-only.
-	//
+
+	// 这是非持久性的跨事务，因此必须在每个Tx中设置
 	// This is non-persisted across transactions so it must be set in every Tx.
 	FillPercent float64
 }
+
+// bucket 表示文件中的一个bucket,它存储bucket key的value.
+// 如果bucket足够小，那么它的根页面可以在bucket header之后以内联的形式存储在value中。
+// 对于内联buckets,root的值为0
 
 // bucket represents the on-file representation of a bucket.
 // This is stored as the "value" of a bucket key. If the bucket is small enough,
@@ -96,6 +104,10 @@ func (b *Bucket) Cursor() *Cursor {
 		stack:  make([]elemRef, 0),
 	}
 }
+
+// Bucket 通过名称来检索一个嵌套的桶
+// 如果不存在返回nil
+// 桶实例只在事务生命周期内可用
 
 // Bucket retrieves a nested bucket by name.
 // Returns nil if the bucket does not exist.
@@ -562,6 +574,7 @@ func (b *Bucket) spill() error {
 		c.node().put([]byte(name), []byte(name), value, 0, bucketLeafFlag)
 	}
 
+	// 如果根节点不存在就忽略
 	// Ignore if there's not a materialized root node.
 	if b.rootNode == nil {
 		return nil
@@ -573,6 +586,7 @@ func (b *Bucket) spill() error {
 	}
 	b.rootNode = b.rootNode.root()
 
+	// 更新本桶的根节点
 	// Update the root node for this bucket.
 	if b.rootNode.pgid >= b.tx.meta.pgid {
 		panic(fmt.Sprintf("pgid (%d) above high water mark (%d)", b.rootNode.pgid, b.tx.meta.pgid))
@@ -582,16 +596,21 @@ func (b *Bucket) spill() error {
 	return nil
 }
 
+// inlineable 如果bucket很小可以内嵌并且不不包含subbucket则返回true
+// 其他都返回false
+
 // inlineable returns true if a bucket is small enough to be written inline
 // and if it contains no subbuckets. Otherwise returns false.
 func (b *Bucket) inlineable() bool {
 	var n = b.rootNode
 
+	// Bucket 仅包含一个叶子节点
 	// Bucket must only contain a single leaf node.
 	if n == nil || !n.isLeaf {
 		return false
 	}
 
+	// Bucket 如果含有subbucket或者超出内嵌的阀值则不能内嵌
 	// Bucket is not inlineable if it contains subbuckets or if it goes beyond
 	// our threshold for inline bucket size.
 	var size = pageHeaderSize

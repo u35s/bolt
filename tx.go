@@ -212,7 +212,10 @@ func (tx *Tx) Commit() error {
 		tx.stats.RebalanceTime += time.Since(startTime)
 	}
 
-	// 将没有用的数据写到脏页
+	// 脏页: 数据已经被修改,存储在缓存中,但是还没有写入硬盘
+	// Dirty Pages:Data that has been modified and Stored in the buffer cache and has not yet been written in to the hard disk
+
+	// 将数据写到脏页
 	// spill data onto dirty pages.
 	startTime = time.Now()
 	if err := tx.root.spill(); err != nil {
